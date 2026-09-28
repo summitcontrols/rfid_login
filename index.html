@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RFID Inventory</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #F2F4F7; --surface: #FFFFFF; --ink: #1B2430; --muted: #5C6B7A; --line: #C7D0DA;
+    --accent: #0E7C86; --ok: #2E7D4F; --ok-bg: #E6F3EA; --bad: #B3261E; --bad-bg: #FBE9E7; --warn: #B7791F; --warn-bg: #FBF1DC;
+    --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; --mono: "IBM Plex Mono", Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0F151C; --surface: #171F28; --ink: #E6ECF2; --muted: #9AA8B6; --line: #2E3A47; --accent: #3FB8C4;
+            --ok: #4FBF7B; --ok-bg: #16301F; --bad: #F28B82; --bad-bg: #3A1B18; --warn: #E0A64A; --warn-bg: #33280F; color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.45; }
+  .wrap { max-width: 760px; margin: 0 auto; padding-block: 16px 48px; padding-inline: 16px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  header h1 { font-size: 20px; font-weight: 600; margin: 0; }
+  .sub { color: var(--muted); font-size: 13px; }
+  button { font: inherit; font-weight: 500; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 9px 14px; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.danger { color: var(--bad); border-color: var(--bad); }
+  button:disabled { opacity: .5; cursor: default; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  input { font: inherit; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); width: 100%; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 15px; font-weight: 600; margin: 0 0 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .status { border-radius: 12px; padding: 18px 16px; margin-bottom: 14px; color: #fff; }
+  .status.ok { background: var(--ok); } .status.bad { background: var(--bad); } .status.none { background: var(--muted); }
+  .status .big { font-size: 34px; font-weight: 600; line-height: 1.1; }
+  .status .small { opacity: .9; font-size: 14px; margin-top: 4px; }
+  ul.plain { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  li.row { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; }
+  li.row .name { flex: 1; min-width: 0; }
+  li.row .epc { font-family: var(--mono); font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pill { font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1.5px solid; white-space: nowrap; }
+  .pill.ok { color: var(--ok); border-color: var(--ok); background: var(--ok-bg); }
+  .pill.bad { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); }
+  .pill.warn { color: var(--warn); border-color: var(--warn); background: var(--warn-bg); }
+  .pill.muted { color: var(--muted); border-color: var(--line); }
+  .grid2 { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+  .toggle input { width: auto; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .log { font-family: var(--mono); font-size: 12px; display: grid; gap: 4px; max-height: 260px; overflow: auto; }
+  .log div { display: grid; grid-template-columns: 70px 1fr; gap: 8px; }
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  [hidden] { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>RFID Inventory</h1>
+      <div class="sub" id="who">Not signed in</div>
+    </div>
+    <button id="signout" hidden>Sign out</button>
+  </header>
+
+  <!-- sign in -->
+  <section class="card" id="login">
+    <h2>Sign in</h2>
+    <p class="muted">Enter your email and we'll send a one-tap link. Only invited people can sign in.</p>
+    <div class="grid2">
+      <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
+      <button class="primary" id="sendlink">Send link</button>
+    </div>
+    <p class="muted" id="loginmsg"></p>
+  </section>
+
+  <!-- app -->
+  <div id="app" hidden>
+    <section class="status none" id="status">
+      <div class="big" id="statusBig">…</div>
+      <div class="small" id="statusSmall">waiting for the device</div>
+    </section>
+
+    <section class="card">
+      <h2>Missing <span class="pill bad" id="missingCount">0</span></h2>
+      <ul class="plain" id="missingList"><li class="muted">Nothing missing.</li></ul>
+    </section>
+
+    <section class="card">
+      <h2>Register a tag
+        <button id="regToggle">Start</button>
+      </h2>
+      <p class="muted" id="regHelp">Hold a tag near the reader, press Start, then tap the tag when it appears and give it a name.</p>
+      <ul class="plain" id="sightings"></ul>
+      <div id="nameBox" hidden style="margin-top:10px">
+        <div class="epc" id="nameEpc" style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:6px"></div>
+        <div class="grid2">
+          <input id="nameInput" placeholder="What is this? e.g. Saddle">
+          <button class="primary" id="nameSave">Save</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Loadout <span class="muted" id="itemCount"></span></h2>
+      <p class="muted">Tick what should be on board. The device gets the change within a few seconds.</p>
+      <ul class="plain" id="items"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Recent events</h2>
+      <div class="log" id="log"></div>
+    </section>
+
+    <p class="muted" id="devinfo"></p>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
+<script>
+const SUPABASE_URL = "https://efhmeeuszbzhaibocawp.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmaG1lZXVzemJ6aGFpYm9jYXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDI2MzgsImV4cCI6MjEwNjE3ODYzOH0.8bvZQawEgnwqX8Vcs9uW12glyyWs00RKBiqEc-ckRwo";
+const THING = "rfid-pi-01";
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const $ = (id) => document.getElementById(id);
+let device = null, items = [], selectedEpc = null, channel = null;
+
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 2200); }
+const fmtTime = (iso) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+const ago = (iso) => { const s = Math.round((Date.now() - new Date(iso)) / 1000); return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : `${Math.round(s / 3600)} h ago`; };
+
+// ---------- auth ----------
+$("sendlink").onclick = async () => {
+  const email = $("email").value.trim();
+  if (!email) return;
+  $("sendlink").disabled = true;
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+  $("loginmsg").textContent = error ? `Could not send: ${error.message}` : "Link sent. Open it on this device.";
+  $("sendlink").disabled = false;
+};
+$("signout").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+sb.auth.onAuthStateChange((_evt, session) => {
+  const signedIn = !!session;
+  $("login").hidden = signedIn; $("app").hidden = !signedIn; $("signout").hidden = !signedIn;
+  $("who").textContent = signedIn ? session.user.email : "Not signed in";
+  if (signedIn) start();
+});
+
+// ---------- data ----------
+async function start() {
+  await loadDevice(); await loadItems(); await loadEvents();
+  if (channel) return;
+  channel = sb.channel("live")
+    .on("postgres_changes", { event: "*", schema: "public", table: "devices", filter: `thing=eq.${THING}` }, (p) => { device = p.new; render(); })
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "events", filter: `thing=eq.${THING}` }, (p) => { prependEvent(p.new); })
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "sightings", filter: `thing=eq.${THING}` }, (p) => { addSighting(p.new); })
+    .subscribe();
+}
+async function loadDevice() { const { data } = await sb.from("devices").select("*").eq("thing", THING).single(); device = data; render(); }
+async function loadItems() { const { data } = await sb.from("items").select("*").eq("thing", THING).order("name"); items = data ?? []; renderItems(); }
+async function loadEvents() {
+  const { data } = await sb.from("events").select("ts,trigger,ok,present,missing,unexpected").eq("thing", THING).order("ts", { ascending: false }).limit(30);
+  $("log").innerHTML = ""; (data ?? []).forEach((e) => prependEvent(e, true));
+}
+async function pushConfig() {
+  const { error } = await sb.functions.invoke("push-config", { body: { thing: THING } });
+  if (error) toast(`Device not updated: ${error.message}`); else toast("Sent to the device");
+}
+
+// ---------- render ----------
+function render() {
+  if (!device) return;
+  const s = device.last_state; const el = $("status");
+  el.classList.remove("ok", "bad", "none");
+  if (!s) { el.classList.add("none"); $("statusBig").textContent = "No scan yet"; $("statusSmall").textContent = "waiting for the device"; }
+  else {
+    const present = (s.present ?? []).length, missing = (s.missing ?? []).length, expected = items.filter((i) => i.expected).length;
+    el.classList.add(missing ? "bad" : "ok");
+    $("statusBig").textContent = missing ? `${missing} missing` : expected ? `Ready to go ${present}/${expected}` : `${present} tag${present === 1 ? "" : "s"} seen`;
+    $("statusSmall").textContent = `${device.name ?? THING} · last scan ${ago(s.ts)}` + ((s.unexpected ?? []).length ? ` · ${s.unexpected.length} unexpected` : "");
+    const ml = $("missingList"); ml.innerHTML = "";
+    $("missingCount").textContent = missing;
+    if (!missing) ml.innerHTML = '<li class="muted">Nothing missing.</li>';
+    (s.missing ?? []).forEach((m) => { const li = document.createElement("li"); li.className = "row"; li.innerHTML = `<span class="name">${esc(m.name ?? "")}<div class="epc">${m.epc}</div></span><span class="pill bad">missing</span>`; ml.appendChild(li); });
+  }
+  $("regToggle").textContent = device.register_mode ? "Stop" : "Start";
+  $("regToggle").className = device.register_mode ? "danger" : "";
+  $("devinfo").textContent = `${THING} · last seen ${device.last_seen ? ago(device.last_seen) : "never"} · scan every ${device.scan_seconds}s · ${device.power_dbm} dBm`;
+}
+function renderItems() {
+  const ul = $("items"); ul.innerHTML = "";
+  $("itemCount").textContent = items.length ? `${items.filter((i) => i.expected).length} of ${items.length} expected` : "no tags named yet";
+  items.forEach((it) => {
+    const li = document.createElement("li"); li.className = "row";
+    li.innerHTML = `<label class="toggle"><input type="checkbox" ${it.expected ? "checked" : ""}></label><span class="name">${esc(it.name)}<div class="epc">${it.epc}</div></span><button class="small" title="Remove">✕</button>`;
+    li.querySelector("input").onchange = async (e) => { await sb.from("items").update({ expected: e.target.checked }).match({ thing: THING, epc: it.epc }); await loadItems(); render(); pushConfig(); };
+    li.querySelector("button").onclick = async () => { await sb.from("items").delete().match({ thing: THING, epc: it.epc }); await loadItems(); render(); pushConfig(); };
+    ul.appendChild(li);
+  });
+}
+function prependEvent(e, append = false) {
+  const div = document.createElement("div");
+  const p = (e.present ?? []).length, m = (e.missing ?? []).length, u = (e.unexpected ?? []).length;
+  div.innerHTML = `<span>${fmtTime(e.ts)}</span><span>${e.trigger} · ${p} present · ${m} missing${u ? ` · ${u} unexpected` : ""}</span>`;
+  append ? $("log").appendChild(div) : $("log").prepend(div);
+}
+
+// ---------- register mode ----------
+const seen = new Map(); // epc -> {reads, rssi, at}
+$("regToggle").onclick = async () => {
+  const on = !device.register_mode;
+  await sb.from("devices").update({ register_mode: on }).eq("thing", THING);
+  if (on) { seen.clear(); $("sightings").innerHTML = ""; }
+  await loadDevice(); pushConfig();
+};
+function addSighting(s) {
+  const named = items.find((i) => i.epc === s.epc);
+  seen.set(s.epc, { reads: s.reads, rssi: s.rssi, at: Date.now(), name: named?.name });
+  renderSightings();
+}
+function renderSightings() {
+  const ul = $("sightings"); ul.innerHTML = "";
+  const rows = [...seen.entries()].filter(([, v]) => Date.now() - v.at < 8000).sort((a, b) => (b[1].rssi ?? -99) - (a[1].rssi ?? -99));
+  if (!rows.length && device?.register_mode) ul.innerHTML = '<li class="muted">Listening… nothing in range yet.</li>';
+  rows.forEach(([epc, v]) => {
+    const li = document.createElement("li"); li.className = "row";
+    li.innerHTML = `<span class="name">${v.name ? esc(v.name) : "<em>unnamed tag</em>"}<div class="epc">${epc}</div></span><span class="pill ${v.name ? "ok" : "warn"}">${v.rssi} dBm</span>`;
+    li.onclick = () => { selectedEpc = epc; $("nameEpc").textContent = epc; $("nameInput").value = v.name ?? ""; $("nameBox").hidden = false; $("nameInput").focus(); };
+    ul.appendChild(li);
+  });
+}
+setInterval(() => { if (device?.register_mode) renderSightings(); }, 2000);
+$("nameSave").onclick = async () => {
+  const name = $("nameInput").value.trim(); if (!name || !selectedEpc) return;
+  const { error } = await sb.from("items").upsert({ thing: THING, epc: selectedEpc, name, expected: true }, { onConflict: "thing,epc" });
+  if (error) { toast(error.message); return; }
+  $("nameBox").hidden = true; await loadItems(); render(); renderSightings(); pushConfig();
+};
+$("nameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("nameSave").click(); });
+
+function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+</script>
+</body>
+</html>
