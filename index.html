@@ -238,6 +238,7 @@
           <li><div class="grow"><div class="nm">Device</div></div><span class="sub2" id="devThing"></span></li>
           <li><div class="grow"><div class="nm">Last seen</div></div><span class="sub2" id="devSeen"></span></li>
           <li><div class="grow"><div class="nm">State</div></div><span class="sub2" id="devState"></span></li>
+          <li><div class="grow"><div class="nm">Live updates</div></div><span class="sub2" id="devRt">connecting</span></li>
           <li><div class="grow"><div class="nm">Signed in as</div></div><span class="sub2" id="devUser"></span></li>
         </ul>
       </div>
@@ -336,7 +337,17 @@ async function boot() {
     .on("postgres_changes", { event: "*", schema: "public", table: "items" }, async () => { await loadItems(); renderAll(); })
     .on("postgres_changes", { event: "*", schema: "public", table: "loadouts" }, async () => { await loadLoadouts(); renderLoadouts(); })
     .on("postgres_changes", { event: "*", schema: "public", table: "loadout_items" }, async () => { await loadLoadouts(); renderLoadouts(); })
-    .subscribe();
+    .subscribe((status, err) => { S.rt = status + (err ? ` (${err.message || err})` : ""); console.log("realtime:", S.rt); renderSettings(); });
+  // Belt and braces: while the sheet is open, also fetch fresh sightings directly every 2 s.
+  setInterval(pollSightings, 2000);
+  setInterval(async () => { if (S.thing) { await loadDevice(); renderHome(); renderSettings(); } }, 10000);
+}
+async function pollSightings() {
+  if (!$("lisList") || !S.thing) return;
+  const since = new Date(Date.now() - 8000).toISOString();
+  const { data } = await sb.from("sightings").select("epc,rssi,reads,received_at").eq("thing", S.thing).gt("received_at", since).order("received_at", { ascending: false }).limit(50);
+  (data ?? []).forEach((s) => { if (!seen.has(s.epc) || new Date(s.received_at).getTime() > seen.get(s.epc).at - 8000) seen.set(s.epc, { rssi: s.rssi, reads: s.reads, at: Date.now() }); });
+  renderListen();
 }
 $("vehicleSelect").onchange = async (e) => { S.thing = e.target.value; lsSet("thing", S.thing); S.device = S.devices.find((d) => d.thing === S.thing); await reloadAll(); show("home"); };
 async function reloadAll() { await Promise.all([loadDevice(), loadItems(), loadLoadouts(), loadEvents()]); renderAll(); }
@@ -534,6 +545,7 @@ function renderSettings() {
   $("devThing").textContent = d.thing; $("devSeen").textContent = ago(d.last_seen);
   $("devState").textContent = (d.state || "base") + (d.register_mode ? " · listening for tags" : "");
   $("devUser").textContent = `${S.user?.email ?? ""} · ${S.role}`;
+  $("devRt").textContent = (S.rt || "connecting").toLowerCase().replace("subscribed", "connected");
   $("subtitle").textContent = `Last seen ${ago(d.last_seen)}`;
   const topic = d.ntfy_topic; $("ntfyOff").hidden = !!topic; $("ntfyOn").hidden = !topic; $("ntfyTopic").textContent = topic || "";
 }
