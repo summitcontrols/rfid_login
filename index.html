@@ -298,7 +298,7 @@
 const SUPABASE_URL = "https://efhmeeuszbzhaibocawp.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmaG1lZXVzemJ6aGFpYm9jYXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDI2MzgsImV4cCI6MjEwNjE3ODYzOH0.8bvZQawEgnwqX8Vcs9uW12glyyWs00RKBiqEc-ckRwo";
 const NTFY = "https://ntfy.sh";
-const BUILD = "20260928-172713";  // stamped at publish time; the page reloads itself when a newer build is published
+const BUILD = "20260928-173103";  // stamped at publish time; the page reloads itself when a newer build is published
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const $ = (id) => document.getElementById(id);
@@ -413,6 +413,7 @@ async function loadLoadouts() {
 }
 async function loadEvents() { const { data } = await sb.from("events").select("*").eq("thing", S.thing).order("ts", { ascending: false }).limit(200); S.events = data ?? []; }
 async function pushConfig(trigger) {
+  S.lastPush = Date.now();
   const { data, error } = await sb.functions.invoke("push-config", { body: trigger ? { thing: S.thing, trigger } : { thing: S.thing } });
   if (error) {
     let msg = error.message || "the device was not updated";
@@ -424,7 +425,18 @@ async function pushConfig(trigger) {
 }
 
 // ---------- render ----------
-function renderAll() { renderHome(); renderInventory(); renderLoadouts(); renderAlerts(); renderSettings(); }
+function renderAll() { renderHome(); renderInventory(); renderLoadouts(); renderAlerts(); renderSettings(); checkSync(); }
+// Safety net: the box's report implies what it thinks is expected. If that ever differs from the
+// app's list for a report newer than our last push, send the list again.
+function checkSync() {
+  const st = S.device?.last_state; if (!st || !isOwner() || !S.items.length) return;
+  if (S.lastPush && new Date(st.ts).getTime() < S.lastPush) return;   // report predates our last push
+  const un = new Set((st.unexpected ?? []).map((u) => u.epc ?? u));
+  const boxExpected = new Set([...(st.missing ?? []).map((m) => m.epc), ...(st.present ?? []).map((p) => p.epc).filter((e) => !un.has(e))]);
+  const appExpected = new Set(S.items.filter((i) => i.expected).map((i) => i.epc));
+  const same = boxExpected.size === appExpected.size && [...appExpected].every((e) => boxExpected.has(e));
+  if (!same && Date.now() - (S.lastPush || 0) > 30000) { console.log("device out of sync, re-sending loadout"); pushConfig(); }
+}
 function row(kind, icon, name, sub) { return `<li><span class="dot ${kind}"><svg><use href="${icon}"/></svg></span><div class="grow"><div class="nm">${esc(name)}</div><div class="epc">${esc(sub)}</div></div></li>`; }
 function fill(ul, rows, emptyText) { ul.innerHTML = rows.length ? rows.join("") : (emptyText ? `<li class="empty">${esc(emptyText)}</li>` : ""); }
 function renderHome() {
