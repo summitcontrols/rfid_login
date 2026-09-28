@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1A73E8">
+<meta name="theme-color" content="#F2F2F7">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -21,12 +21,21 @@
     --mono: "SF Mono", Consolas, "Roboto Mono", monospace;
     color-scheme: light;
   }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #000000; --card: #1C1C1E; --ink: #F2F2F7; --muted: #9CA3AF; --line: #2C2C2E; --line2: #3A3A3C;
-            --blue: #4C8DF6; --green: #3DBB62; --red: #F0625A; --amber: #F2B441;
-            --green-bg: #12301B; --red-bg: #3A1512; --amber-bg: #3A2A0E; --blue-bg: #14243D; color-scheme: dark; }
-  }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  .drawer-bg { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 40; }
+  .drawer { position: absolute; top: 0; bottom: 0; left: 0; width: min(300px, 84vw); background: var(--card); box-shadow: 4px 0 24px rgba(0,0,0,.18); display: flex; flex-direction: column; padding: calc(16px + env(safe-area-inset-top, 0px)) 0 calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .drawer .head { padding: 4px 18px 14px; border-bottom: 1px solid var(--line); }
+  .drawer .head .app { font-size: 18px; font-weight: 700; }
+  .drawer .head .who { font-size: 13px; color: var(--muted); margin-top: 2px; word-break: break-all; }
+  .drawer .item { display: flex; align-items: center; gap: 14px; padding: 13px 18px; border: 0; background: none; font: inherit; font-size: 16px; font-weight: 500; color: var(--ink); text-align: left; border-radius: 0; width: 100%; }
+  .drawer .item svg { width: 22px; height: 22px; color: var(--muted); }
+  .drawer .item.on { background: var(--blue-bg); color: var(--blue); } .drawer .item.on svg { color: var(--blue); }
+  .drawer .item .badge2 { margin-left: auto; min-width: 20px; height: 20px; border-radius: 10px; background: var(--red); color: #fff; font-size: 12px; display: grid; place-items: center; padding: 0 6px; }
+  .drawer .spacer { flex: 1; }
+  .drawer .foot { border-top: 1px solid var(--line); padding-top: 6px; }
+  .topbar .mid { flex: 1; text-align: center; min-width: 0; }
+  .topbar .mid h1 { font-size: 18px; }
+  .topbar .mid .sub { font-size: 12px; }
   html, body { height: 100%; }
   body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.4; }
   .app { max-width: 520px; margin: 0 auto; min-height: 100%; padding: 0 16px calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 12px); }
@@ -118,6 +127,7 @@
     <symbol id="i-list" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></symbol>
     <symbol id="i-box" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 7l9-4 9 4v10l-9 4-9-4z M3 7l9 4 9-4 M12 11v10"/></symbol>
     <symbol id="i-bell" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></symbol>
     <symbol id="i-gear" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></symbol>
@@ -144,8 +154,9 @@
 
   <div id="main" hidden>
     <div class="topbar">
-      <div><h1 id="title">My Vehicle</h1><div class="sub" id="subtitle"></div></div>
-      <div class="seg"><span class="pill off" id="rolePill" hidden>View only</span><button class="iconbtn" id="gear" aria-label="Settings"><svg><use href="#i-gear"/></svg></button></div>
+      <button class="iconbtn" id="menuBtn" aria-label="Menu"><svg><use href="#i-menu"/></svg></button>
+      <div class="mid"><h1 id="title">My Vehicle</h1><div class="sub" id="subtitle"></div></div>
+      <div style="width:40px;display:flex;justify-content:flex-end"><span class="pill off" id="rolePill" hidden>View</span></div>
     </div>
 
     <!-- HOME -->
@@ -254,6 +265,18 @@
   </div>
 </div>
 
+<div class="drawer-bg" id="drawerBg" hidden>
+  <nav class="drawer" aria-label="Menu">
+    <div class="head"><div class="app">RFID Inventory</div><div class="who" id="drawerWho"></div></div>
+    <button class="item" data-s="home"><svg><use href="#i-home"/></svg>Home</button>
+    <button class="item" data-s="inv"><svg><use href="#i-list"/></svg>Inventory</button>
+    <button class="item" data-s="load"><svg><use href="#i-box"/></svg>Loadouts</button>
+    <button class="item" data-s="alerts"><svg><use href="#i-bell"/></svg>Alerts<span class="badge2" id="drawerBadge" hidden>0</span></button>
+    <button class="item" data-s="settings"><svg><use href="#i-gear"/></svg>Settings</button>
+    <div class="spacer"></div>
+    <div class="foot"><button class="item" id="drawerSignout"><svg><use href="#i-x"/></svg>Sign out</button></div>
+  </nav>
+</div>
 <nav class="tabs" id="tabs" hidden>
   <div class="inner">
     <button class="tab on" data-s="home"><svg><use href="#i-home"/></svg>Home</button>
@@ -273,7 +296,7 @@
 const SUPABASE_URL = "https://efhmeeuszbzhaibocawp.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmaG1lZXVzemJ6aGFpYm9jYXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDI2MzgsImV4cCI6MjEwNjE3ODYzOH0.8bvZQawEgnwqX8Vcs9uW12glyyWs00RKBiqEc-ckRwo";
 const NTFY = "https://ntfy.sh";
-const BUILD = "20260928-161658";  // stamped at publish time; the page reloads itself when a newer build is published
+const BUILD = "20260928-164358";  // stamped at publish time; the page reloads itself when a newer build is published
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const $ = (id) => document.getElementById(id);
@@ -323,12 +346,17 @@ sb.auth.onAuthStateChange((_e, session) => {
 function show(name) {
   ["home", "inv", "load", "alerts", "settings"].forEach((s) => $("s-" + s).hidden = s !== name);
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.dataset.s === name));
+  document.querySelectorAll(".drawer .item[data-s]").forEach((b) => b.classList.toggle("on", b.dataset.s === name));
   $("title").textContent = { home: S.device?.name || "My Vehicle", inv: "Inventory", load: "Loadouts", alerts: "Alerts", settings: "Settings" }[name];
   if (name === "alerts") { lsSet("alertsSeen-" + S.thing, String(Date.now())); renderAlerts(); }
   window.scrollTo(0, 0);
 }
 document.querySelectorAll(".tab").forEach((t) => t.onclick = () => show(t.dataset.s));
-$("gear").onclick = () => show("settings");
+// Menu drawer from the three bars
+$("menuBtn").onclick = () => { $("drawerBg").hidden = false; $("drawerWho").textContent = `${S.device?.name || S.thing || ""} · ${S.user?.email ?? ""}`; };
+$("drawerBg").addEventListener("click", (e) => { if (e.target === $("drawerBg")) $("drawerBg").hidden = true; });
+document.querySelectorAll(".drawer .item[data-s]").forEach((b) => b.onclick = () => { $("drawerBg").hidden = true; show(b.dataset.s); });
+$("drawerSignout").onclick = async () => { await sb.auth.signOut(); location.reload(); };
 
 // ---------- data ----------
 async function boot() {
@@ -551,6 +579,7 @@ function renderAlerts() {
   const seenAt = Number(lsGet("alertsSeen-" + S.thing) || 0);
   const fresh = withAlerts.filter((e) => new Date(e.ts).getTime() > seenAt).reduce((n, e) => n + e.alerts.length, 0);
   $("alertBadge").hidden = !fresh; $("alertBadge").textContent = fresh;
+  $("drawerBadge").hidden = !fresh; $("drawerBadge").textContent = fresh;
   const box = $("alertList"); box.innerHTML = "";
   if (!withAlerts.length) { box.innerHTML = '<p class="empty">No alerts. Nothing has gone missing.</p>'; return; }
   withAlerts.slice(0, 60).forEach((e) => (e.alerts ?? []).forEach((a) => {
