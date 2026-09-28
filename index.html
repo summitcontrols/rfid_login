@@ -3,119 +3,228 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F2F2F7">
 <title>RFID Inventory</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
   :root {
-    --bg: #F2F4F7; --surface: #FFFFFF; --ink: #1B2430; --muted: #5C6B7A; --line: #C7D0DA;
-    --accent: #0E7C86; --ok: #2E7D4F; --ok-bg: #E6F3EA; --bad: #B3261E; --bad-bg: #FBE9E7; --warn: #B7791F; --warn-bg: #FBF1DC;
-    --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; --mono: "IBM Plex Mono", Consolas, monospace;
+    --bg: #F2F2F7; --card: #FFFFFF; --ink: #1C1C1E; --muted: #6B7280; --line: #E5E7EB; --line2: #D1D5DB;
+    --blue: #1A73E8; --blue-ink: #FFFFFF; --green: #2DA44E; --red: #D93025; --amber: #E8A317;
+    --green-bg: #E8F5EC; --red-bg: #FCEBEA; --amber-bg: #FDF3DC; --blue-bg: #E8F0FE;
+    --tab-h: 64px; --font: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: "SF Mono", Consolas, "Roboto Mono", monospace;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #0F151C; --surface: #171F28; --ink: #E6ECF2; --muted: #9AA8B6; --line: #2E3A47; --accent: #3FB8C4;
-            --ok: #4FBF7B; --ok-bg: #16301F; --bad: #F28B82; --bad-bg: #3A1B18; --warn: #E0A64A; --warn-bg: #33280F; color-scheme: dark; }
+    :root { --bg: #000000; --card: #1C1C1E; --ink: #F2F2F7; --muted: #9CA3AF; --line: #2C2C2E; --line2: #3A3A3C;
+            --blue: #4C8DF6; --green: #3DBB62; --red: #F0625A; --amber: #F2B441;
+            --green-bg: #12301B; --red-bg: #3A1512; --amber-bg: #3A2A0E; --blue-bg: #14243D; color-scheme: dark; }
   }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.45; }
-  .wrap { max-width: 760px; margin: 0 auto; padding-block: 16px 48px; padding-inline: 16px; }
-  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-  header h1 { font-size: 20px; font-weight: 600; margin: 0; }
-  .sub { color: var(--muted); font-size: 13px; }
-  button { font: inherit; font-weight: 500; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 9px 14px; cursor: pointer; }
-  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  button.danger { color: var(--bad); border-color: var(--bad); }
-  button:disabled { opacity: .5; cursor: default; }
-  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  input { font: inherit; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); width: 100%; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
-  .card h2 { font-size: 15px; font-weight: 600; margin: 0 0 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .status { border-radius: 12px; padding: 18px 16px; margin-bottom: 14px; color: #fff; }
-  .status.ok { background: var(--ok); } .status.bad { background: var(--bad); } .status.none { background: var(--muted); }
-  .status .big { font-size: 34px; font-weight: 600; line-height: 1.1; }
-  .status .small { opacity: .9; font-size: 14px; margin-top: 4px; }
-  ul.plain { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-  li.row { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; }
-  li.row .name { flex: 1; min-width: 0; }
-  li.row .epc { font-family: var(--mono); font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pill { font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1.5px solid; white-space: nowrap; }
-  .pill.ok { color: var(--ok); border-color: var(--ok); background: var(--ok-bg); }
-  .pill.bad { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); }
-  .pill.warn { color: var(--warn); border-color: var(--warn); background: var(--warn-bg); }
-  .pill.muted { color: var(--muted); border-color: var(--line); }
-  .grid2 { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
-  .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
-  .toggle input { width: auto; }
-  .muted { color: var(--muted); font-size: 13px; }
-  .log { font-family: var(--mono); font-size: 12px; display: grid; gap: 4px; max-height: 260px; overflow: auto; }
-  .log div { display: grid; grid-template-columns: 70px 1fr; gap: 8px; }
-  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.4; }
+  .app { max-width: 520px; margin: 0 auto; min-height: 100%; padding: 0 16px calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 12px); }
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 0 8px; position: sticky; top: 0; background: var(--bg); z-index: 5; }
+  .topbar h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .topbar .sub { font-size: 13px; color: var(--muted); }
+  .iconbtn { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  .iconbtn svg { width: 20px; height: 20px; }
+  .card { background: var(--card); border-radius: 14px; padding: 14px 16px; margin: 0 0 12px; box-shadow: 0 1px 2px rgba(0,0,0,.05); border: 1px solid var(--line); }
+  .card h2 { font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .hero { border-radius: 16px; padding: 18px 18px 16px; color: #fff; margin-bottom: 12px; display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center; }
+  .hero.ok { background: var(--green); } .hero.bad { background: var(--red); } .hero.none { background: var(--muted); }
+  .hero .big { font-size: 30px; font-weight: 700; line-height: 1.05; }
+  .hero .lbl { font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; opacity: .9; }
+  .hero .small { font-size: 14px; opacity: .92; margin-top: 4px; }
+  .hero svg { width: 44px; height: 44px; }
+  .vehicle { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; }
+  .vehicle .ic { width: 44px; height: 44px; border-radius: 10px; background: var(--blue-bg); color: var(--blue); display: grid; place-items: center; }
+  .vehicle .ic svg { width: 26px; height: 26px; }
+  .vehicle .name { font-weight: 600; } .vehicle .meta { font-size: 13px; color: var(--muted); }
+  ul.list { list-style: none; margin: 0; padding: 0; }
+  ul.list li { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); }
+  ul.list li:first-child { border-top: 0; }
+  .dot { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; flex: none; color: #fff; }
+  .dot.ok { background: var(--green); } .dot.bad { background: var(--red); } .dot.warn { background: var(--amber); } .dot.off { background: var(--line2); }
+  .dot svg { width: 13px; height: 13px; }
+  .grow { flex: 1; min-width: 0; }
+  .nm { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .epc { font-family: var(--mono); font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sub2 { font-size: 13px; color: var(--muted); }
+  .chev { color: var(--line2); flex: none; } .chev svg { width: 18px; height: 18px; }
+  .pill { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .pill.ok { background: var(--green-bg); color: var(--green); } .pill.bad { background: var(--red-bg); color: var(--red); }
+  .pill.warn { background: var(--amber-bg); color: var(--amber); } .pill.blue { background: var(--blue-bg); color: var(--blue); } .pill.off { background: var(--line); color: var(--muted); }
+  button, .btn { font: inherit; font-weight: 600; font-size: 15px; border-radius: 12px; border: 1px solid var(--line2); background: var(--card); color: var(--ink); padding: 11px 16px; cursor: pointer; }
+  button.primary { background: var(--blue); border-color: var(--blue); color: var(--blue-ink); }
+  button.danger { color: var(--red); border-color: var(--red); background: transparent; }
+  button.wide { width: 100%; display: block; }
+  button.sm { padding: 7px 12px; font-size: 14px; border-radius: 10px; }
+  button:disabled { opacity: .45; cursor: default; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  input, select { font: inherit; padding: 11px 12px; border: 1px solid var(--line2); border-radius: 12px; background: var(--card); color: var(--ink); width: 100%; }
+  .row2 { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+  .field { display: grid; gap: 6px; margin-bottom: 12px; } .field label { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .switch { position: relative; width: 46px; height: 28px; flex: none; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--line2); transition: background .15s; }
+  .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .switch input:checked + span { background: var(--green); } .switch input:checked + span::after { transform: translateX(18px); }
+  .radio { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line2); flex: none; display: grid; place-items: center; }
+  .radio.on { border-color: var(--blue); } .radio.on::after { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--blue); }
+  .seg { display: flex; gap: 6px; }
+  .tabs { position: fixed; left: 0; right: 0; bottom: 0; height: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); background: var(--card); border-top: 1px solid var(--line); display: flex; justify-content: center; z-index: 10; }
+  .tabs .inner { width: 100%; max-width: 520px; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .tab { border: 0; background: none; color: var(--muted); font-size: 11px; font-weight: 600; display: grid; justify-items: center; gap: 3px; padding: 9px 0 6px; border-radius: 0; position: relative; }
+  .tab svg { width: 24px; height: 24px; } .tab.on { color: var(--blue); }
+  .tab .badge { position: absolute; top: 6px; right: calc(50% - 22px); min-width: 18px; height: 18px; border-radius: 9px; background: var(--red); color: #fff; font-size: 11px; display: grid; place-items: center; padding: 0 5px; }
+  .screen[hidden] { display: none; }
+  .sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 20; display: grid; align-items: end; justify-items: center; }
+  .sheet { background: var(--card); width: 100%; max-width: 520px; border-radius: 18px 18px 0 0; padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px)); max-height: 85vh; overflow: auto; }
+  .sheet h3 { margin: 4px 0 10px; font-size: 18px; }
+  .grab { width: 40px; height: 4px; border-radius: 2px; background: var(--line2); margin: 0 auto 10px; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .empty { color: var(--muted); font-size: 14px; padding: 10px 0; }
+  .toast { position: fixed; left: 50%; bottom: calc(var(--tab-h) + 22px); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 30; white-space: nowrap; }
   .toast.show { opacity: 1; }
+  .alert { border-left: 4px solid var(--red); padding-left: 12px; margin-bottom: 12px; }
+  .alert.warn { border-left-color: var(--amber); }
+  .alert .t { font-weight: 600; } .alert .when { font-size: 13px; color: var(--muted); }
+  .login-wrap { min-height: 80vh; display: grid; align-content: center; }
+  .logo { width: 64px; height: 64px; border-radius: 18px; background: var(--blue); color: #fff; display: grid; place-items: center; margin: 0 auto 14px; }
+  .logo svg { width: 36px; height: 36px; }
+  .center { text-align: center; }
   [hidden] { display: none !important; }
-  @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div>
-      <h1>RFID Inventory</h1>
-      <div class="sub" id="who">Not signed in</div>
-    </div>
-    <button id="signout" hidden>Sign out</button>
-  </header>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 7l9-4 9 4v10l-9 4-9-4z M3 7l9 4 9-4 M12 11v10"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-bang" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M12 6v7M12 17.5v.01"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-van" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M2 7h11l4 4h4v5h-2M2 7v9h2M9 16h6M2 7l1-2h8M8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm12 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 3h8l10 10-8 8L3 11z M7.5 7.5h.01"/></symbol>
+    <symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="rgba(255,255,255,.22)"/><path fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M7.5 12.5l3 3 6-7"/></symbol>
+    <symbol id="i-circle-bang" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="rgba(255,255,255,.22)"/><path fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" d="M12 7v6M12 16.5v.01"/></symbol>
+  </defs>
+</svg>
 
+<div class="app">
   <!-- sign in -->
-  <section class="card" id="login">
-    <h2>Sign in</h2>
-    <p class="muted">Enter your email and we'll send a one-tap link. Only invited people can sign in.</p>
-    <div class="grid2">
-      <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
-      <button class="primary" id="sendlink">Send link</button>
+  <div id="login" class="login-wrap">
+    <div class="logo"><svg><use href="#i-tag"/></svg></div>
+    <h1 class="center" style="margin:0 0 4px;font-size:24px">RFID Inventory</h1>
+    <p class="center muted" style="margin:0 0 18px">Sign in with your email. Only invited people can get in.</p>
+    <div class="card">
+      <div class="field"><label for="email">Email</label><input id="email" type="email" placeholder="you@example.com" autocomplete="email" inputmode="email"></div>
+      <button class="primary wide" id="sendlink">Send sign-in link</button>
+      <p class="muted center" id="loginmsg" style="margin:10px 0 0"></p>
     </div>
-    <p class="muted" id="loginmsg"></p>
-  </section>
+  </div>
 
-  <!-- app -->
-  <div id="app" hidden>
-    <section class="status none" id="status">
-      <div class="big" id="statusBig">…</div>
-      <div class="small" id="statusSmall">waiting for the device</div>
-    </section>
+  <div id="main" hidden>
+    <div class="topbar">
+      <div><h1 id="title">My Vehicle</h1><div class="sub" id="subtitle"></div></div>
+      <button class="iconbtn" id="gear" aria-label="Settings"><svg><use href="#i-gear"/></svg></button>
+    </div>
 
-    <section class="card">
-      <h2>Missing <span class="pill bad" id="missingCount">0</span></h2>
-      <ul class="plain" id="missingList"><li class="muted">Nothing missing.</li></ul>
-    </section>
-
-    <section class="card">
-      <h2>Register a tag
-        <button id="regToggle">Start</button>
-      </h2>
-      <p class="muted" id="regHelp">Hold a tag near the reader, press Start, then tap the tag when it appears and give it a name.</p>
-      <ul class="plain" id="sightings"></ul>
-      <div id="nameBox" hidden style="margin-top:10px">
-        <div class="epc" id="nameEpc" style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:6px"></div>
-        <div class="grid2">
-          <input id="nameInput" placeholder="What is this? e.g. Saddle">
-          <button class="primary" id="nameSave">Save</button>
-        </div>
+    <!-- HOME -->
+    <section class="screen" id="s-home">
+      <div class="hero none" id="hero">
+        <svg id="heroIcon"><use href="#i-circle-check"/></svg>
+        <div><div class="lbl" id="heroLbl">Waiting</div><div class="big" id="heroBig">…</div><div class="small" id="heroSmall">no scan yet</div></div>
+      </div>
+      <div class="card vehicle">
+        <div class="ic"><svg><use href="#i-van"/></svg></div>
+        <div><div class="name" id="vName">Vehicle</div><div class="meta" id="vMeta">last scan: never</div></div>
+        <span class="chev"><svg><use href="#i-chev"/></svg></span>
+      </div>
+      <div class="card" id="homeMissingCard" hidden>
+        <h2>Not detected <span class="pill bad" id="homeMissingCount">0</span></h2>
+        <ul class="list" id="homeMissing"></ul>
+      </div>
+      <div class="card" id="homeUnexpectedCard" hidden>
+        <h2>Unexpected on board <span class="pill warn" id="homeUnexpectedCount">0</span></h2>
+        <ul class="list" id="homeUnexpected"></ul>
+      </div>
+      <div class="card">
+        <h2>Detected <span class="pill ok" id="homePresentCount">0</span></h2>
+        <ul class="list" id="homePresent"><li class="empty">Nothing yet.</li></ul>
       </div>
     </section>
 
-    <section class="card">
-      <h2>Loadout <span class="muted" id="itemCount"></span></h2>
-      <p class="muted">Tick what should be on board. The device gets the change within a few seconds.</p>
-      <ul class="plain" id="items"></ul>
+    <!-- INVENTORY -->
+    <section class="screen" id="s-inv" hidden>
+      <div class="seg" style="margin-bottom:12px">
+        <button class="primary" id="btnRegister" style="flex:1">Register a tag</button>
+        <button class="danger" id="btnClear">Clear all</button>
+      </div>
+      <div class="card">
+        <h2>All tags <span class="pill off" id="invCount">0</span></h2>
+        <ul class="list" id="invList"><li class="empty">No tags registered yet. Tap Register a tag.</li></ul>
+        <p class="muted" style="margin:10px 0 0">Tap a tag to rename or remove it. The switch says whether it's expected on board.</p>
+      </div>
     </section>
 
-    <section class="card">
-      <h2>Recent events</h2>
-      <div class="log" id="log"></div>
+    <!-- LOADOUT -->
+    <section class="screen" id="s-load" hidden>
+      <div class="card">
+        <h2>Select loadout</h2>
+        <ul class="list" id="loadList"><li class="empty">No saved loadouts. Tick tags in Inventory, then save them here as a set.</li></ul>
+      </div>
+      <button class="primary wide" id="btnApply" disabled>Apply loadout</button>
+      <div style="height:8px"></div>
+      <button class="wide" id="btnSaveLoadout">Save current ticks as a new loadout</button>
     </section>
 
-    <p class="muted" id="devinfo"></p>
+    <!-- ALERTS -->
+    <section class="screen" id="s-alerts" hidden>
+      <div id="alertList"><p class="empty">No alerts. Nothing has gone missing.</p></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="screen" id="s-settings" hidden>
+      <div class="card">
+        <h2>Vehicle</h2>
+        <div class="field"><label for="setName">Name</label><input id="setName" placeholder="Horsebox 1"></div>
+        <div class="field"><label for="setScan">Scan every (seconds)</label><input id="setScan" type="number" min="1" max="60" step="1"></div>
+        <div class="field"><label for="setPower">Reader power (dBm, 15 to 26)</label><input id="setPower" type="number" min="15" max="26" step="1"></div>
+        <button class="primary wide" id="btnSaveSettings">Save and send to device</button>
+      </div>
+      <div class="card">
+        <h2>Device</h2>
+        <ul class="list">
+          <li><div class="grow"><div class="nm">Device</div></div><span class="sub2" id="devThing"></span></li>
+          <li><div class="grow"><div class="nm">Last seen</div></div><span class="sub2" id="devSeen"></span></li>
+          <li><div class="grow"><div class="nm">Register mode</div></div><span class="sub2" id="devReg"></span></li>
+          <li><div class="grow"><div class="nm">Signed in as</div></div><span class="sub2" id="devUser"></span></li>
+        </ul>
+      </div>
+      <button class="wide" id="btnSignout">Sign out</button>
+    </section>
   </div>
+</div>
+
+<!-- tab bar -->
+<nav class="tabs" id="tabs" hidden>
+  <div class="inner">
+    <button class="tab on" data-s="home"><svg><use href="#i-home"/></svg>Home</button>
+    <button class="tab" data-s="inv"><svg><use href="#i-list"/></svg>Inventory</button>
+    <button class="tab" data-s="load"><svg><use href="#i-box"/></svg>Loadout</button>
+    <button class="tab" data-s="alerts"><svg><use href="#i-bell"/></svg>Alerts<span class="badge" id="alertBadge" hidden>0</span></button>
+  </div>
+</nav>
+
+<!-- sheets -->
+<div class="sheet-bg" id="sheetBg" hidden>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -123,127 +232,233 @@
 <script>
 const SUPABASE_URL = "https://efhmeeuszbzhaibocawp.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmaG1lZXVzemJ6aGFpYm9jYXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDI2MzgsImV4cCI6MjEwNjE3ODYzOH0.8bvZQawEgnwqX8Vcs9uW12glyyWs00RKBiqEc-ckRwo";
-const THING = "rfid-pi-01";
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const $ = (id) => document.getElementById(id);
-let device = null, items = [], selectedEpc = null, channel = null;
+const S = { thing: null, device: null, items: [], loadouts: [], loadoutItems: [], events: [], selectedLoadout: null, user: null, channel: null };
+const seen = new Map();
 
-function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 2200); }
-const fmtTime = (iso) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-const ago = (iso) => { const s = Math.round((Date.now() - new Date(iso)) / 1000); return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : `${Math.round(s / 3600)} h ago`; };
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const ago = (iso) => { if (!iso) return "never"; const s = Math.max(0, Math.round((Date.now() - new Date(iso)) / 1000)); return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : `${Math.round(s / 86400)} d ago`; };
+const when = (iso) => new Date(iso).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const short = (epc) => epc.length > 12 ? epc.slice(0, 6) + "…" + epc.slice(-6) : epc;
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2200); }
+function nameOf(epc) { return S.items.find((i) => i.epc === epc)?.name; }
+
+// ---------- sheets (in-page dialogs) ----------
+function openSheet(html) { $("sheetBody").innerHTML = html; $("sheetBg").hidden = false; }
+function closeSheet() { $("sheetBg").hidden = true; }
+$("sheetBg").addEventListener("click", (e) => { if (e.target === $("sheetBg")) closeSheet(); });
+function confirmSheet(title, text, okLabel, onOk, danger = true) {
+  openSheet(`<h3>${esc(title)}</h3><p class="muted">${esc(text)}</p><div class="seg"><button id="shCancel" style="flex:1">Cancel</button><button id="shOk" class="${danger ? "danger" : "primary"}" style="flex:1">${esc(okLabel)}</button></div>`);
+  $("shCancel").onclick = closeSheet; $("shOk").onclick = async () => { closeSheet(); await onOk(); };
+}
 
 // ---------- auth ----------
 $("sendlink").onclick = async () => {
-  const email = $("email").value.trim();
-  if (!email) return;
+  const email = $("email").value.trim(); if (!email) return;
   $("sendlink").disabled = true;
-  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
-  $("loginmsg").textContent = error ? `Could not send: ${error.message}` : "Link sent. Open it on this device.";
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: false } });
+  $("loginmsg").textContent = error ? `Could not send: ${error.message}` : "Check your email and open the link on this device.";
   $("sendlink").disabled = false;
 };
-$("signout").onclick = async () => { await sb.auth.signOut(); location.reload(); };
-
-sb.auth.onAuthStateChange((_evt, session) => {
-  const signedIn = !!session;
-  $("login").hidden = signedIn; $("app").hidden = !signedIn; $("signout").hidden = !signedIn;
-  $("who").textContent = signedIn ? session.user.email : "Not signed in";
-  if (signedIn) start();
+$("btnSignout").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+sb.auth.onAuthStateChange((_e, session) => {
+  const on = !!session; S.user = session?.user ?? null;
+  $("login").hidden = on; $("main").hidden = !on; $("tabs").hidden = !on;
+  if (on && !S.channel) boot();
 });
 
+// ---------- tabs ----------
+function show(name) {
+  ["home", "inv", "load", "alerts", "settings"].forEach((s) => $("s-" + s).hidden = s !== name);
+  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.dataset.s === name));
+  $("title").textContent = { home: S.device?.name || "My Vehicle", inv: "Inventory", load: "Loadouts", alerts: "Alerts", settings: "Settings" }[name];
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll(".tab").forEach((t) => t.onclick = () => show(t.dataset.s));
+$("gear").onclick = () => show("settings");
+
 // ---------- data ----------
-async function start() {
-  await loadDevice(); await loadItems(); await loadEvents();
-  if (channel) return;
-  channel = sb.channel("live")
-    .on("postgres_changes", { event: "*", schema: "public", table: "devices", filter: `thing=eq.${THING}` }, (p) => { device = p.new; render(); })
-    .on("postgres_changes", { event: "INSERT", schema: "public", table: "events", filter: `thing=eq.${THING}` }, (p) => { prependEvent(p.new); })
-    .on("postgres_changes", { event: "INSERT", schema: "public", table: "sightings", filter: `thing=eq.${THING}` }, (p) => { addSighting(p.new); })
+async function boot() {
+  const { data: devs } = await sb.from("devices").select("*").order("thing");
+  if (!devs?.length) { toast("No device registered yet"); return; }
+  S.thing = devs[0].thing; S.device = devs[0];
+  await Promise.all([loadItems(), loadLoadouts(), loadEvents()]);
+  renderAll();
+  S.channel = sb.channel("live")
+    .on("postgres_changes", { event: "*", schema: "public", table: "devices" }, (p) => { if (p.new?.thing === S.thing) { S.device = p.new; renderAll(); } })
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "events" }, (p) => { if (p.new.thing === S.thing) { S.events.unshift(p.new); S.events = S.events.slice(0, 100); renderAlerts(); } })
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "sightings" }, (p) => { if (p.new.thing === S.thing) addSighting(p.new); })
+    .on("postgres_changes", { event: "*", schema: "public", table: "items" }, async () => { await loadItems(); renderAll(); })
+    .on("postgres_changes", { event: "*", schema: "public", table: "loadouts" }, async () => { await loadLoadouts(); renderLoadouts(); })
     .subscribe();
 }
-async function loadDevice() { const { data } = await sb.from("devices").select("*").eq("thing", THING).single(); device = data; render(); }
-async function loadItems() { const { data } = await sb.from("items").select("*").eq("thing", THING).order("name"); items = data ?? []; renderItems(); }
-async function loadEvents() {
-  const { data } = await sb.from("events").select("ts,trigger,ok,present,missing,unexpected").eq("thing", THING).order("ts", { ascending: false }).limit(30);
-  $("log").innerHTML = ""; (data ?? []).forEach((e) => prependEvent(e, true));
+async function loadItems() { const { data } = await sb.from("items").select("*").eq("thing", S.thing).order("name"); S.items = data ?? []; }
+async function loadLoadouts() {
+  const { data: l } = await sb.from("loadouts").select("*").eq("thing", S.thing).order("name"); S.loadouts = l ?? [];
+  const ids = S.loadouts.map((x) => x.id);
+  const { data: li } = ids.length ? await sb.from("loadout_items").select("*").in("loadout_id", ids) : { data: [] }; S.loadoutItems = li ?? [];
 }
+async function loadEvents() { const { data } = await sb.from("events").select("*").eq("thing", S.thing).order("ts", { ascending: false }).limit(100); S.events = data ?? []; }
 async function pushConfig() {
-  const { error } = await sb.functions.invoke("push-config", { body: { thing: THING } });
-  if (error) toast(`Device not updated: ${error.message}`); else toast("Sent to the device");
+  const { error } = await sb.functions.invoke("push-config", { body: { thing: S.thing } });
+  if (error) toast("Saved, but the device was not updated"); else toast("Sent to the device");
 }
 
 // ---------- render ----------
-function render() {
-  if (!device) return;
-  const s = device.last_state; const el = $("status");
-  el.classList.remove("ok", "bad", "none");
-  if (!s) { el.classList.add("none"); $("statusBig").textContent = "No scan yet"; $("statusSmall").textContent = "waiting for the device"; }
+function renderAll() { renderHome(); renderInventory(); renderLoadouts(); renderAlerts(); renderSettings(); }
+function renderHome() {
+  const d = S.device, st = d?.last_state, hero = $("hero");
+  $("title").textContent = $("s-home").hidden ? $("title").textContent : (d?.name || "My Vehicle");
+  $("vName").textContent = d?.name || S.thing; $("vMeta").textContent = `Last scan: ${st ? ago(st.ts) : "never"}`;
+  hero.classList.remove("ok", "bad", "none");
+  const expected = S.items.filter((i) => i.expected);
+  if (!st) { hero.classList.add("none"); $("heroLbl").textContent = "Waiting"; $("heroBig").textContent = "No scan yet"; $("heroSmall").textContent = "the device hasn't reported"; }
   else {
-    const present = (s.present ?? []).length, missing = (s.missing ?? []).length, expected = items.filter((i) => i.expected).length;
-    el.classList.add(missing ? "bad" : "ok");
-    $("statusBig").textContent = missing ? `${missing} missing` : expected ? `Ready to go ${present}/${expected}` : `${present} tag${present === 1 ? "" : "s"} seen`;
-    $("statusSmall").textContent = `${device.name ?? THING} · last scan ${ago(s.ts)}` + ((s.unexpected ?? []).length ? ` · ${s.unexpected.length} unexpected` : "");
-    const ml = $("missingList"); ml.innerHTML = "";
-    $("missingCount").textContent = missing;
-    if (!missing) ml.innerHTML = '<li class="muted">Nothing missing.</li>';
-    (s.missing ?? []).forEach((m) => { const li = document.createElement("li"); li.className = "row"; li.innerHTML = `<span class="name">${esc(m.name ?? "")}<div class="epc">${m.epc}</div></span><span class="pill bad">missing</span>`; ml.appendChild(li); });
+    const present = st.present ?? [], missing = st.missing ?? [], unexpected = st.unexpected ?? [];
+    const presentExpected = expected.filter((i) => present.some((p) => p.epc === i.epc)).length;
+    if (missing.length) { hero.classList.add("bad"); $("heroIcon").innerHTML = '<use href="#i-circle-bang"/>'; $("heroLbl").textContent = "Not ready"; $("heroBig").textContent = `${presentExpected}/${expected.length}`; $("heroSmall").textContent = `${missing.length} required item${missing.length === 1 ? "" : "s"} not detected`; }
+    else { hero.classList.add("ok"); $("heroIcon").innerHTML = '<use href="#i-circle-check"/>'; $("heroLbl").textContent = "Ready to go"; $("heroBig").textContent = expected.length ? `${presentExpected}/${expected.length}` : `${present.length} on board`; $("heroSmall").textContent = expected.length ? "All required items detected" : "No loadout set yet"; }
+    fill($("homeMissing"), missing.map((m) => row("bad", "#i-x", m.name || "Unnamed tag", m.epc)), "Nothing missing.");
+    $("homeMissingCard").hidden = !missing.length; $("homeMissingCount").textContent = missing.length;
+    fill($("homeUnexpected"), unexpected.map((e) => row("warn", "#i-bang", nameOf(e) || "Unregistered tag", e)), "");
+    $("homeUnexpectedCard").hidden = !unexpected.length; $("homeUnexpectedCount").textContent = unexpected.length;
+    fill($("homePresent"), present.map((p) => row("ok", "#i-check", p.name || nameOf(p.epc) || "Unregistered tag", `${short(p.epc)} · ${p.rssi ?? "?"} dBm`)), "Nothing detected right now.");
+    $("homePresentCount").textContent = present.length;
   }
-  $("regToggle").textContent = device.register_mode ? "Stop" : "Start";
-  $("regToggle").className = device.register_mode ? "danger" : "";
-  $("devinfo").textContent = `${THING} · last seen ${device.last_seen ? ago(device.last_seen) : "never"} · scan every ${device.scan_seconds}s · ${device.power_dbm} dBm`;
 }
-function renderItems() {
-  const ul = $("items"); ul.innerHTML = "";
-  $("itemCount").textContent = items.length ? `${items.filter((i) => i.expected).length} of ${items.length} expected` : "no tags named yet";
-  items.forEach((it) => {
-    const li = document.createElement("li"); li.className = "row";
-    li.innerHTML = `<label class="toggle"><input type="checkbox" ${it.expected ? "checked" : ""}></label><span class="name">${esc(it.name)}<div class="epc">${it.epc}</div></span><button class="small" title="Remove">✕</button>`;
-    li.querySelector("input").onchange = async (e) => { await sb.from("items").update({ expected: e.target.checked }).match({ thing: THING, epc: it.epc }); await loadItems(); render(); pushConfig(); };
-    li.querySelector("button").onclick = async () => { await sb.from("items").delete().match({ thing: THING, epc: it.epc }); await loadItems(); render(); pushConfig(); };
+function row(kind, icon, name, sub) { return `<li><span class="dot ${kind}"><svg><use href="${icon}"/></svg></span><div class="grow"><div class="nm">${esc(name)}</div><div class="epc">${esc(sub)}</div></div></li>`; }
+function fill(ul, rows, emptyText) { ul.innerHTML = rows.length ? rows.join("") : (emptyText ? `<li class="empty">${esc(emptyText)}</li>` : ""); }
+
+function renderInventory() {
+  const present = new Set((S.device?.last_state?.present ?? []).map((p) => p.epc));
+  $("invCount").textContent = `${S.items.length}`;
+  const ul = $("invList"); ul.innerHTML = "";
+  if (!S.items.length) { ul.innerHTML = '<li class="empty">No tags registered yet. Tap Register a tag.</li>'; return; }
+  S.items.forEach((it) => {
+    const li = document.createElement("li");
+    const kind = present.has(it.epc) ? "ok" : it.expected ? "bad" : "off";
+    li.innerHTML = `<span class="dot ${kind}"><svg><use href="${kind === "ok" ? "#i-check" : kind === "bad" ? "#i-x" : "#i-check"}"/></svg></span><div class="grow"><div class="nm">${esc(it.name)}</div><div class="epc">${esc(short(it.epc))} · ${present.has(it.epc) ? "detected" : "not detected"}</div></div><label class="switch" title="Expected on board"><input type="checkbox" ${it.expected ? "checked" : ""}><span></span></label>`;
+    li.querySelector(".grow").onclick = () => editItem(it);
+    li.querySelector("input").onchange = async (e) => { await sb.from("items").update({ expected: e.target.checked }).match({ thing: S.thing, epc: it.epc }); await loadItems(); renderAll(); pushConfig(); };
     ul.appendChild(li);
   });
 }
-function prependEvent(e, append = false) {
-  const div = document.createElement("div");
-  const p = (e.present ?? []).length, m = (e.missing ?? []).length, u = (e.unexpected ?? []).length;
-  div.innerHTML = `<span>${fmtTime(e.ts)}</span><span>${e.trigger} · ${p} present · ${m} missing${u ? ` · ${u} unexpected` : ""}</span>`;
-  append ? $("log").appendChild(div) : $("log").prepend(div);
+function editItem(it) {
+  openSheet(`<h3>Edit tag</h3><div class="field"><label>Name</label><input id="edName" value="${esc(it.name)}"></div><p class="epc" style="margin:0 0 12px">${esc(it.epc)}</p><div class="seg"><button id="edDelete" class="danger">Remove</button><button id="edSave" class="primary" style="flex:1">Save</button></div>`);
+  $("edName").focus();
+  $("edSave").onclick = async () => { const name = $("edName").value.trim(); if (!name) return; await sb.from("items").update({ name }).match({ thing: S.thing, epc: it.epc }); closeSheet(); await loadItems(); renderAll(); pushConfig(); };
+  $("edDelete").onclick = () => confirmSheet("Remove this tag?", `${it.name} will be forgotten. The sticker keeps working if you register it again.`, "Remove", async () => { await sb.from("items").delete().match({ thing: S.thing, epc: it.epc }); await loadItems(); renderAll(); pushConfig(); });
 }
+$("btnClear").onclick = () => { if (!S.items.length) return; confirmSheet("Clear all tags?", `All ${S.items.length} registered tags and every loadout will be removed from this vehicle.`, "Clear all", async () => {
+  await sb.from("loadouts").delete().eq("thing", S.thing); await sb.from("items").delete().eq("thing", S.thing); await loadItems(); await loadLoadouts(); renderAll(); pushConfig(); }); };
 
-// ---------- register mode ----------
-const seen = new Map(); // epc -> {reads, rssi, at}
-$("regToggle").onclick = async () => {
-  const on = !device.register_mode;
-  await sb.from("devices").update({ register_mode: on }).eq("thing", THING);
-  if (on) { seen.clear(); $("sightings").innerHTML = ""; }
-  await loadDevice(); pushConfig();
-};
-function addSighting(s) {
-  const named = items.find((i) => i.epc === s.epc);
-  seen.set(s.epc, { reads: s.reads, rssi: s.rssi, at: Date.now(), name: named?.name });
-  renderSightings();
+// ---------- register ----------
+$("btnRegister").onclick = () => openRegister();
+async function setRegister(on) { await sb.from("devices").update({ register_mode: on }).eq("thing", S.thing); pushConfig(); }
+function openRegister() {
+  seen.clear();
+  openSheet(`<h3>Register a tag</h3><p class="muted" id="regHelp">Hold a tag near the reader. Tap it when it appears and give it a name.</p><ul class="list" id="regList"><li class="empty">Listening…</li></ul><div id="regName" hidden style="margin-top:10px"><p class="epc" id="regEpc" style="margin:0 0 6px"></p><div class="row2"><input id="regInput" placeholder="What is it? e.g. Saddle"><button id="regSave" class="primary">Save</button></div></div><div style="height:12px"></div><button class="wide" id="regDone">Done</button>`);
+  setRegister(true);
+  $("regDone").onclick = () => { closeSheet(); setRegister(false); };
+  $("regSave").onclick = async () => {
+    const epc = $("regEpc").textContent, name = $("regInput").value.trim(); if (!name || !epc) return;
+    const { error } = await sb.from("items").upsert({ thing: S.thing, epc, name, expected: true }, { onConflict: "thing,epc" });
+    if (error) { toast(error.message); return; }
+    $("regName").hidden = true; toast(`${name} registered`); await loadItems(); renderAll(); renderRegList(); pushConfig();
+  };
+  $("regInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("regSave").click(); });
+  const bg = $("sheetBg"); bg.onclick = (e) => { if (e.target === bg) { closeSheet(); setRegister(false); } };
 }
-function renderSightings() {
-  const ul = $("sightings"); ul.innerHTML = "";
+function addSighting(s) { seen.set(s.epc, { rssi: s.rssi, reads: s.reads, at: Date.now() }); renderRegList(); }
+function renderRegList() {
+  const ul = $("regList"); if (!ul) return; ul.innerHTML = "";
   const rows = [...seen.entries()].filter(([, v]) => Date.now() - v.at < 8000).sort((a, b) => (b[1].rssi ?? -99) - (a[1].rssi ?? -99));
-  if (!rows.length && device?.register_mode) ul.innerHTML = '<li class="muted">Listening… nothing in range yet.</li>';
+  if (!rows.length) { ul.innerHTML = '<li class="empty">Listening… nothing in range yet.</li>'; return; }
   rows.forEach(([epc, v]) => {
-    const li = document.createElement("li"); li.className = "row";
-    li.innerHTML = `<span class="name">${v.name ? esc(v.name) : "<em>unnamed tag</em>"}<div class="epc">${epc}</div></span><span class="pill ${v.name ? "ok" : "warn"}">${v.rssi} dBm</span>`;
-    li.onclick = () => { selectedEpc = epc; $("nameEpc").textContent = epc; $("nameInput").value = v.name ?? ""; $("nameBox").hidden = false; $("nameInput").focus(); };
+    const nm = nameOf(epc); const li = document.createElement("li");
+    li.innerHTML = `<span class="dot ${nm ? "ok" : "warn"}"><svg><use href="${nm ? "#i-check" : "#i-bang"}"/></svg></span><div class="grow"><div class="nm">${nm ? esc(nm) : "Unnamed tag"}</div><div class="epc">${esc(short(epc))} · ${v.rssi} dBm</div></div><span class="pill ${nm ? "ok" : "blue"}">${nm ? "named" : "tap to name"}</span>`;
+    li.onclick = () => { $("regEpc").textContent = epc; $("regInput").value = nm ?? ""; $("regName").hidden = false; $("regInput").focus(); };
     ul.appendChild(li);
   });
 }
-setInterval(() => { if (device?.register_mode) renderSightings(); }, 2000);
-$("nameSave").onclick = async () => {
-  const name = $("nameInput").value.trim(); if (!name || !selectedEpc) return;
-  const { error } = await sb.from("items").upsert({ thing: THING, epc: selectedEpc, name, expected: true }, { onConflict: "thing,epc" });
-  if (error) { toast(error.message); return; }
-  $("nameBox").hidden = true; await loadItems(); render(); renderSightings(); pushConfig();
-};
-$("nameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("nameSave").click(); });
+setInterval(() => { if ($("regList")) renderRegList(); }, 2000);
 
-function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+// ---------- loadouts ----------
+function renderLoadouts() {
+  const ul = $("loadList"); ul.innerHTML = "";
+  if (!S.loadouts.length) { ul.innerHTML = '<li class="empty">No saved loadouts. Tick tags in Inventory, then save them here as a set.</li>'; $("btnApply").disabled = true; return; }
+  S.loadouts.forEach((l) => {
+    const n = S.loadoutItems.filter((x) => x.loadout_id === l.id).length, active = S.device?.active_loadout === l.id, sel = S.selectedLoadout === l.id;
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="radio ${sel ? "on" : ""}"></span><div class="grow"><div class="nm">${esc(l.name)} ${active ? '<span class="pill ok">active</span>' : ""}</div><div class="sub2">${n} item${n === 1 ? "" : "s"}</div></div><button class="sm" data-edit>Edit</button>`;
+    li.onclick = (e) => { if (e.target.closest("[data-edit]")) return; S.selectedLoadout = l.id; renderLoadouts(); };
+    li.querySelector("[data-edit]").onclick = () => editLoadout(l);
+    ul.appendChild(li);
+  });
+  $("btnApply").disabled = !S.selectedLoadout;
+}
+$("btnApply").onclick = async () => {
+  const l = S.loadouts.find((x) => x.id === S.selectedLoadout); if (!l) return;
+  const { error } = await sb.rpc("apply_loadout", { p_loadout: l.id });
+  if (error) { toast(error.message); return; }
+  await loadItems(); const { data } = await sb.from("devices").select("*").eq("thing", S.thing).single(); S.device = data; renderAll(); pushConfig();
+};
+$("btnSaveLoadout").onclick = () => {
+  const ticked = S.items.filter((i) => i.expected); if (!ticked.length) { toast("Tick at least one tag in Inventory first"); return; }
+  openSheet(`<h3>Save loadout</h3><p class="muted">${ticked.length} ticked tag${ticked.length === 1 ? "" : "s"} will be saved as a set.</p><div class="field"><label>Name</label><input id="loName" placeholder="Competition"></div><button id="loSave" class="primary wide">Save</button>`);
+  $("loName").focus();
+  $("loSave").onclick = async () => {
+    const name = $("loName").value.trim(); if (!name) return;
+    const { data: l, error } = await sb.from("loadouts").upsert({ thing: S.thing, name }, { onConflict: "thing,name" }).select().single();
+    if (error) { toast(error.message); return; }
+    await sb.from("loadout_items").delete().eq("loadout_id", l.id);
+    await sb.from("loadout_items").insert(ticked.map((i) => ({ loadout_id: l.id, epc: i.epc })));
+    await sb.from("devices").update({ active_loadout: l.id }).eq("thing", S.thing);
+    closeSheet(); await loadLoadouts(); S.selectedLoadout = l.id; renderLoadouts(); toast(`${name} saved`);
+  };
+}
+function editLoadout(l) {
+  const members = new Set(S.loadoutItems.filter((x) => x.loadout_id === l.id).map((x) => x.epc));
+  openSheet(`<h3>${esc(l.name)}</h3><ul class="list" id="loItems">${S.items.map((i) => `<li><label class="switch"><input type="checkbox" data-epc="${esc(i.epc)}" ${members.has(i.epc) ? "checked" : ""}><span></span></label><div class="grow"><div class="nm">${esc(i.name)}</div><div class="epc">${esc(short(i.epc))}</div></div></li>`).join("") || '<li class="empty">No tags registered.</li>'}</ul><div style="height:12px"></div><div class="seg"><button id="loDelete" class="danger">Delete loadout</button><button id="loDone" class="primary" style="flex:1">Save</button></div>`);
+  $("loDone").onclick = async () => {
+    const epcs = [...document.querySelectorAll("#loItems input:checked")].map((c) => c.dataset.epc);
+    await sb.from("loadout_items").delete().eq("loadout_id", l.id);
+    if (epcs.length) await sb.from("loadout_items").insert(epcs.map((epc) => ({ loadout_id: l.id, epc })));
+    closeSheet(); await loadLoadouts(); renderLoadouts(); toast("Loadout updated");
+  };
+  $("loDelete").onclick = () => confirmSheet("Delete this loadout?", `${l.name} will be removed. Your tags stay registered.`, "Delete", async () => { await sb.from("loadouts").delete().eq("id", l.id); await loadLoadouts(); if (S.selectedLoadout === l.id) S.selectedLoadout = null; renderLoadouts(); });
+}
+
+// ---------- alerts ----------
+function renderAlerts() {
+  const alerts = S.events.filter((e) => (e.missing?.length || e.unexpected?.length));
+  $("alertBadge").hidden = !alerts.length; $("alertBadge").textContent = alerts.length;
+  const box = $("alertList"); box.innerHTML = "";
+  if (!alerts.length) { box.innerHTML = '<p class="empty">No alerts. Nothing has gone missing.</p>'; return; }
+  alerts.slice(0, 50).forEach((e) => {
+    (e.missing ?? []).forEach((m) => box.insertAdjacentHTML("beforeend", `<div class="card alert"><div class="t">${esc(m.name || "Unnamed tag")} not detected</div><div class="when">${when(e.ts)} · ${esc(S.device?.name || S.thing)}</div><div class="muted" style="margin-top:6px">Expected on board but not seen by the reader.</div></div>`));
+    (e.unexpected ?? []).forEach((u) => box.insertAdjacentHTML("beforeend", `<div class="card alert warn"><div class="t">${esc(nameOf(u) || "Unregistered tag")} on board</div><div class="when">${when(e.ts)} · ${esc(S.device?.name || S.thing)}</div><div class="muted" style="margin-top:6px">Detected but not in the loadout.</div></div>`));
+  });
+}
+
+// ---------- settings ----------
+function renderSettings() {
+  const d = S.device; if (!d) return;
+  if (document.activeElement?.id !== "setName") $("setName").value = d.name ?? "";
+  if (document.activeElement?.id !== "setScan") $("setScan").value = d.scan_seconds ?? 2;
+  if (document.activeElement?.id !== "setPower") $("setPower").value = d.power_dbm ?? 26;
+  $("devThing").textContent = d.thing; $("devSeen").textContent = ago(d.last_seen); $("devReg").textContent = d.register_mode ? "on" : "off"; $("devUser").textContent = S.user?.email ?? "";
+  $("subtitle").textContent = `Last seen ${ago(d.last_seen)}`;
+}
+$("btnSaveSettings").onclick = async () => {
+  const name = $("setName").value.trim() || "Vehicle", scan = Math.min(60, Math.max(1, Number($("setScan").value) || 2)), power = Math.min(26, Math.max(15, Number($("setPower").value) || 26));
+  const { error } = await sb.from("devices").update({ name, scan_seconds: scan, power_dbm: power }).eq("thing", S.thing);
+  if (error) { toast(error.message); return; }
+  const { data } = await sb.from("devices").select("*").eq("thing", S.thing).single(); S.device = data; renderAll(); pushConfig();
+};
+setInterval(() => { if (S.device) { $("vMeta").textContent = `Last scan: ${S.device.last_state ? ago(S.device.last_state.ts) : "never"}`; $("subtitle").textContent = `Last seen ${ago(S.device.last_seen)}`; } }, 15000);
 </script>
 </body>
 </html>
