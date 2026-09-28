@@ -298,7 +298,7 @@
 const SUPABASE_URL = "https://efhmeeuszbzhaibocawp.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmaG1lZXVzemJ6aGFpYm9jYXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDI2MzgsImV4cCI6MjEwNjE3ODYzOH0.8bvZQawEgnwqX8Vcs9uW12glyyWs00RKBiqEc-ckRwo";
 const NTFY = "https://ntfy.sh";
-const BUILD = "20260928-165630";  // stamped at publish time; the page reloads itself when a newer build is published
+const BUILD = "20260928-172713";  // stamped at publish time; the page reloads itself when a newer build is published
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const $ = (id) => document.getElementById(id);
@@ -380,7 +380,7 @@ async function boot() {
     .subscribe((status, err) => { S.rt = status + (err ? ` (${err.message || err})` : ""); console.log("realtime:", S.rt); renderSettings(); });
   // Belt and braces: the page also refreshes its data on timers, so nothing depends on the live feed alone.
   setInterval(pollSightings, 2000);
-  setInterval(async () => { if (S.thing) { await loadDevice(); renderHome(); renderSettings(); } }, 10000);
+  setInterval(async () => { if (S.thing) { await loadDevice(); renderHome(); renderSettings(); } }, 5000);
   setInterval(async () => { if (S.thing) { await loadEvents(); renderAlerts(); renderHome(); } }, 15000);
   setInterval(async () => { if (S.thing) { await loadItems(); await loadLoadouts(); renderInventory(); renderLoadouts(); } }, 30000);
 }
