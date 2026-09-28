@@ -351,8 +351,9 @@ async function loadEvents() { const { data } = await sb.from("events").select("*
 async function pushConfig(trigger) {
   const { data, error } = await sb.functions.invoke("push-config", { body: trigger ? { thing: S.thing, trigger } : { thing: S.thing } });
   if (error) {
-    let msg = "the device was not updated";
-    try { const b = await error.context?.json?.(); if (b?.error) msg = b.error; } catch {}
+    let msg = error.message || "the device was not updated";
+    try { const b = await error.context?.json?.(); if (b?.error) msg = `${b.error} (HTTP ${error.context.status})`; } catch {}
+    console.error("push-config failed:", error, msg);
     toast(`Saved, but ${msg}`); return false;
   }
   toast(trigger ? `Sent: ${trigger.replace("_", " ")}` : "Sent to the device"); return true;
