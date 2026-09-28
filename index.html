@@ -266,6 +266,7 @@
 const SUPABASE_URL = "https://efhmeeuszbzhaibocawp.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmaG1lZXVzemJ6aGFpYm9jYXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDI2MzgsImV4cCI6MjEwNjE3ODYzOH0.8bvZQawEgnwqX8Vcs9uW12glyyWs00RKBiqEc-ckRwo";
 const NTFY = "https://ntfy.sh";
+const BUILD = "20260928-161214";  // stamped at publish time; the page reloads itself when a newer build is published
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const $ = (id) => document.getElementById(id);
@@ -287,7 +288,7 @@ function lsSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
 
 // ---------- sheets ----------
 function openSheet(html, onClose) { $("sheetBody").innerHTML = html; $("sheetBg").hidden = false; $("sheetBg")._onClose = onClose; }
-function closeSheet() { const f = $("sheetBg")._onClose; $("sheetBg").hidden = true; $("sheetBg")._onClose = null; if (f) f(); }
+function closeSheet() { const f = $("sheetBg")._onClose; $("sheetBg").hidden = true; $("sheetBg")._onClose = null; if (f) f(); if (S.pendingReload) location.reload(); }
 $("sheetBg").addEventListener("click", (e) => { if (e.target === $("sheetBg")) closeSheet(); });
 function confirmSheet(title, text, okLabel, onOk, danger = true) {
   openSheet(`<h3>${esc(title)}</h3><p class="muted">${esc(text)}</p><div class="seg"><button id="shCancel" style="flex:1">Cancel</button><button id="shOk" class="${danger ? "danger" : "primary"}" style="flex:1">${esc(okLabel)}</button></div>`);
@@ -338,10 +339,23 @@ async function boot() {
     .on("postgres_changes", { event: "*", schema: "public", table: "loadouts" }, async () => { await loadLoadouts(); renderLoadouts(); })
     .on("postgres_changes", { event: "*", schema: "public", table: "loadout_items" }, async () => { await loadLoadouts(); renderLoadouts(); })
     .subscribe((status, err) => { S.rt = status + (err ? ` (${err.message || err})` : ""); console.log("realtime:", S.rt); renderSettings(); });
-  // Belt and braces: while the sheet is open, also fetch fresh sightings directly every 2 s.
+  // Belt and braces: the page also refreshes its data on timers, so nothing depends on the live feed alone.
   setInterval(pollSightings, 2000);
   setInterval(async () => { if (S.thing) { await loadDevice(); renderHome(); renderSettings(); } }, 10000);
+  setInterval(async () => { if (S.thing) { await loadEvents(); renderAlerts(); renderHome(); } }, 15000);
+  setInterval(async () => { if (S.thing) { await loadItems(); await loadLoadouts(); renderInventory(); renderLoadouts(); } }, 30000);
 }
+// Self-updating: compare the published build stamp with this page's own, reload when it changes.
+async function checkVersion() {
+  if (BUILD === "__BUILD__") return;
+  try {
+    const r = await fetch(`version.txt?t=${Date.now()}`, { cache: "no-store" });
+    const v = (await r.text()).trim();
+    if (v && v !== BUILD) { if ($("sheetBg").hidden) location.reload(); else S.pendingReload = true; }
+  } catch { /* offline: try again later */ }
+}
+setInterval(checkVersion, 60000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkVersion(); });
 async function pollSightings() {
   if (!$("lisList") || !S.thing) return;
   const since = new Date(Date.now() - 8000).toISOString();
