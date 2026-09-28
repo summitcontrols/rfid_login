@@ -204,14 +204,16 @@
 
     <!-- LOADOUT -->
     <section class="screen" id="s-load" hidden>
+      <div class="seg owner-only" style="margin-bottom:12px">
+        <button class="primary" id="btnNewLoadout" style="flex:1">New loadout</button>
+        <button id="btnSaveLoadout">Save current as loadout</button>
+      </div>
       <div class="card">
         <h2>Loadouts</h2>
         <ul class="list" id="loadList"></ul>
       </div>
       <div class="owner-only">
         <button class="primary wide" id="btnApply" disabled>Apply loadout</button>
-        <div style="height:8px"></div>
-        <button class="wide" id="btnSaveLoadout">Save current items as a new loadout</button>
       </div>
     </section>
 
@@ -297,7 +299,7 @@
 const SUPABASE_URL = "https://efhmeeuszbzhaibocawp.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmaG1lZXVzemJ6aGFpYm9jYXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDI2MzgsImV4cCI6MjEwNjE3ODYzOH0.8bvZQawEgnwqX8Vcs9uW12glyyWs00RKBiqEc-ckRwo";
 const NTFY = "https://ntfy.sh";
-const BUILD = "20260928-164548";  // stamped at publish time; the page reloads itself when a newer build is published
+const BUILD = "20260928-165107";  // stamped at publish time; the page reloads itself when a newer build is published
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const $ = (id) => document.getElementById(id);
@@ -559,6 +561,20 @@ $("btnSaveLoadout").onclick = () => {
     await sb.from("loadout_items").insert(ticked.map((i) => ({ loadout_id: l.id, item_id: i.id })));
     await sb.from("devices").update({ active_loadout: l.id }).eq("thing", S.thing);
     closeSheet(); await loadLoadouts(); await loadDevice(); S.selectedLoadout = l.id; renderLoadouts(); toast(`${name} saved and active`);
+  };
+};
+$("btnNewLoadout").onclick = () => {
+  if (!S.items.length) { toast("Add some items first"); return; }
+  openSheet(`<h3>New loadout</h3><div class="field"><label>Name</label><input id="nlName" placeholder="Competition"></div><p class="muted" style="margin:0 0 6px">Switch on what should be on board for this kind of trip.</p><ul class="list" id="nlItems">${S.items.map((i) => `<li><label class="switch"><input type="checkbox" data-id="${i.id}"><span></span></label><div class="grow"><div class="nm">${esc(i.name)}</div><div class="epc">${esc(short(i.epc))}</div></div></li>`).join("")}</ul><div style="height:12px"></div><button id="nlSave" class="primary wide">Create loadout</button>`);
+  $("nlName").focus();
+  $("nlSave").onclick = async () => {
+    const name = $("nlName").value.trim(); if (!name) { $("nlName").focus(); return; }
+    const ids = [...document.querySelectorAll("#nlItems input:checked")].map((c) => Number(c.dataset.id));
+    const { data: l, error } = await sb.from("loadouts").upsert({ thing: S.thing, name }, { onConflict: "thing,name" }).select().single();
+    if (error) { toast(error.message); return; }
+    await sb.from("loadout_items").delete().eq("loadout_id", l.id);
+    if (ids.length) await sb.from("loadout_items").insert(ids.map((item_id) => ({ loadout_id: l.id, item_id })));
+    closeSheet(); await loadLoadouts(); S.selectedLoadout = l.id; renderLoadouts(); toast(`${name} created. Tap Apply to use it.`);
   };
 };
 function editLoadout(l) {
