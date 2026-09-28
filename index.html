@@ -198,15 +198,14 @@
       <div class="card">
         <h2>Items <span class="pill off" id="invCount">0</span></h2>
         <ul class="list" id="invList"><li class="empty">No items yet. Tap Add item.</li></ul>
-        <p class="muted owner-only" style="margin:10px 0 0">Tap an item to rename it, replace its tag or remove it. The switch says whether it's expected on board.</p>
+        <p class="muted owner-only" style="margin:10px 0 0">Tap an item to rename it, replace its tag or remove it. Which items are expected on board is set by the active loadout.</p>
       </div>
     </section>
 
     <!-- LOADOUT -->
     <section class="screen" id="s-load" hidden>
-      <div class="seg owner-only" style="margin-bottom:12px">
-        <button class="primary" id="btnNewLoadout" style="flex:1">New loadout</button>
-        <button id="btnSaveLoadout">Save current as loadout</button>
+      <div class="owner-only" style="margin-bottom:12px">
+        <button class="primary wide" id="btnNewLoadout">New loadout</button>
       </div>
       <div class="card">
         <h2>Loadouts</h2>
@@ -299,7 +298,7 @@
 const SUPABASE_URL = "https://efhmeeuszbzhaibocawp.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmaG1lZXVzemJ6aGFpYm9jYXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDI2MzgsImV4cCI6MjEwNjE3ODYzOH0.8bvZQawEgnwqX8Vcs9uW12glyyWs00RKBiqEc-ckRwo";
 const NTFY = "https://ntfy.sh";
-const BUILD = "20260928-165107";  // stamped at publish time; the page reloads itself when a newer build is published
+const BUILD = "20260928-165630";  // stamped at publish time; the page reloads itself when a newer build is published
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const $ = (id) => document.getElementById(id);
@@ -470,9 +469,8 @@ function renderInventory() {
   S.items.forEach((it) => {
     const li = document.createElement("li");
     const kind = present.has(it.epc) ? "ok" : it.expected ? "bad" : "off";
-    li.innerHTML = `<span class="dot ${kind}"><svg><use href="${kind === "bad" ? "#i-x" : "#i-check"}"/></svg></span><div class="grow"><div class="nm">${esc(it.name)}</div><div class="epc">${esc(short(it.epc))} · ${present.has(it.epc) ? "detected" : "not detected"}</div></div><label class="switch" title="Expected on board"><input type="checkbox" ${it.expected ? "checked" : ""} ${isOwner() ? "" : "disabled"}><span></span></label>`;
-    if (isOwner()) li.querySelector(".grow").onclick = () => editItem(it);
-    li.querySelector("input").onchange = async (e) => { await sb.from("items").update({ expected: e.target.checked }).eq("id", it.id); await loadItems(); renderAll(); pushConfig(); };
+    li.innerHTML = `<span class="dot ${kind}"><svg><use href="${kind === "bad" ? "#i-x" : "#i-check"}"/></svg></span><div class="grow"><div class="nm">${esc(it.name)}</div><div class="epc">${esc(short(it.epc))} · ${present.has(it.epc) ? "detected" : "not detected"}</div></div><span class="pill ${it.expected ? "blue" : "off"}">${it.expected ? "in loadout" : "not in loadout"}</span>${isOwner() ? '<span class="chev"><svg><use href="#i-chev"/></svg></span>' : ""}`;
+    if (isOwner()) li.onclick = () => editItem(it);
     ul.appendChild(li);
   });
 }
@@ -548,20 +546,6 @@ $("btnApply").onclick = async () => {
   const { error } = await sb.rpc("apply_loadout", { p_thing: S.thing, p_loadout: S.selectedLoadout });
   if (error) { toast(error.message); return; }
   await loadItems(); await loadDevice(); renderAll(); pushConfig();
-};
-$("btnSaveLoadout").onclick = () => {
-  const ticked = S.items.filter((i) => i.expected); if (!ticked.length) { toast("Switch on at least one item in Inventory first"); return; }
-  openSheet(`<h3>Save loadout</h3><p class="muted">${ticked.length} item${ticked.length === 1 ? "" : "s"} currently expected will be saved as a set.</p><div class="field"><label>Name</label><input id="loName" placeholder="Competition"></div><button id="loSave" class="primary wide">Save</button>`);
-  $("loName").focus();
-  $("loSave").onclick = async () => {
-    const name = $("loName").value.trim(); if (!name) return;
-    const { data: l, error } = await sb.from("loadouts").upsert({ thing: S.thing, name }, { onConflict: "thing,name" }).select().single();
-    if (error) { toast(error.message); return; }
-    await sb.from("loadout_items").delete().eq("loadout_id", l.id);
-    await sb.from("loadout_items").insert(ticked.map((i) => ({ loadout_id: l.id, item_id: i.id })));
-    await sb.from("devices").update({ active_loadout: l.id }).eq("thing", S.thing);
-    closeSheet(); await loadLoadouts(); await loadDevice(); S.selectedLoadout = l.id; renderLoadouts(); toast(`${name} saved and active`);
-  };
 };
 $("btnNewLoadout").onclick = () => {
   if (!S.items.length) { toast("Add some items first"); return; }
