@@ -3,7 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F2F2F7">
+<meta name="theme-color" content="#1A73E8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="RFID">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
 <title>RFID Inventory</title>
 <style>
   :root {
@@ -266,7 +273,7 @@
 const SUPABASE_URL = "https://efhmeeuszbzhaibocawp.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmaG1lZXVzemJ6aGFpYm9jYXdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDI2MzgsImV4cCI6MjEwNjE3ODYzOH0.8bvZQawEgnwqX8Vcs9uW12glyyWs00RKBiqEc-ckRwo";
 const NTFY = "https://ntfy.sh";
-const BUILD = "20260928-161214";  // stamped at publish time; the page reloads itself when a newer build is published
+const BUILD = "20260928-161658";  // stamped at publish time; the page reloads itself when a newer build is published
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const $ = (id) => document.getElementById(id);
@@ -307,6 +314,8 @@ $("btnSignout").onclick = async () => { await sb.auth.signOut(); location.reload
 sb.auth.onAuthStateChange((_e, session) => {
   const on = !!session; S.user = session?.user ?? null;
   $("login").hidden = on; $("main").hidden = !on; $("tabs").hidden = !on;
+  // The live feed must carry the login token, or row security shows it nothing.
+  if (session?.access_token) sb.realtime.setAuth(session.access_token);
   if (on && !S.channel) boot();
 });
 
